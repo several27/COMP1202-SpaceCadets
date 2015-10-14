@@ -1,3 +1,4 @@
+import com.sun.org.apache.bcel.internal.generic.NEW;
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
@@ -94,7 +95,7 @@ public class Main extends FXApplet
 
 	private void displayAddMessageWindow()
 	{
-		String message = newMessageBox.display();
+		String message = NewMessageBox.display();
 		addMessage(
 				message,
 				getRandomInteger(10, 30),
