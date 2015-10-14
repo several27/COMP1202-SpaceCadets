@@ -1,12 +1,8 @@
 import javafx.scene.control.Label;
+import javafx.scene.layout.Pane;
 
 public class Message extends Label
 {
-	/**
-	 * 012
-	 * 7 3
-	 * 654
-	 */
 	private int direction;
 
 	public Message(String text, int direction)
@@ -26,16 +22,6 @@ public class Message extends Label
 		this.direction = direction;
 	}
 
-	public void reverseDirection()
-	{
-		int reversedDirection = getDirection();
-		reversedDirection = ((reversedDirection * 2) + 8) / 2;
-		if (reversedDirection > 7)
-			reversedDirection -= 8;
-
-		setDirection(reversedDirection);
-	}
-
 	public double getNewX()
 	{
 		double speed = getFont().getSize() / 10;
@@ -48,5 +34,25 @@ public class Message extends Label
 		double speed = getFont().getSize() / 10;
 
 		return getTranslateY() + speed * Math.cos(Math.toRadians(direction));
+	}
+
+	public boolean detectCollisionWithCanvas(Pane canvas)
+	{
+		double newX, newY, newX1, newY1;
+
+		newX = getNewX();
+		newY = getNewY();
+		newX1 = newX + getWidth();
+		newY1 = newY + getHeight();
+
+		return (
+				newX < 0 || newY < 0
+				||
+				newX > canvas.getWidth() || newY > canvas.getHeight()
+				||
+				newX1 < 0 || newY1 < 0
+				||
+				newX1 > canvas.getWidth() || newY1 > canvas.getHeight()
+		);
 	}
 }

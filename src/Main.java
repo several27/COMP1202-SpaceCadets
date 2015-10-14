@@ -1,8 +1,4 @@
 import javafx.animation.AnimationTimer;
-import javafx.beans.property.LongProperty;
-import javafx.beans.property.ReadOnlyStringProperty;
-import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.beans.property.SimpleLongProperty;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -16,6 +12,7 @@ import java.util.*;
 public class Main extends FXApplet
 {
 	Button addMessageButton, clearButton, randomMessageButton;
+	Label stats;
 	HBox topBox;
 
 	Pane canvas;
@@ -26,7 +23,7 @@ public class Main extends FXApplet
 
 	AnimationTimer timer;
 
-	private final FrameStats frameStats = new FrameStats();
+	private Benchmark benchmark = new Benchmark();
 
 	@Override
 	public void initApplet()
@@ -41,8 +38,7 @@ public class Main extends FXApplet
 		randomMessageButton.setOnAction(e -> addRandomMessages());
 
 		// Stats
-		Label stats = new Label();
-		stats.textProperty().bind(frameStats.textProperty());
+		stats = new Label();
 
 		// Top horizontal box
 		topBox = new HBox();
@@ -73,75 +69,32 @@ public class Main extends FXApplet
 
 	private class MessagesAnimationTimer extends AnimationTimer
 	{
-		final LongProperty lastUpdateTime = new SimpleLongProperty(0);
-
 		@Override
 		public void handle(long now)
 		{
-			if (lastUpdateTime.get() > 0)
+			for (Node node : canvas.getChildren())
 			{
-				long elapsedTime = now - lastUpdateTime.get();
+				if (!(node instanceof Message))
+					break;
 
-				for (Node node : canvas.getChildren())
+				// Detect border collision
+				while (((Message) node).detectCollisionWithCanvas(canvas))
 				{
-					if (!(node instanceof Message))
-						break;
-
-//				double x = node.getTranslateX(),
-//						y = node.getTranslateY();
-//
-//				if (newX - 100 > canvas.getWidth() || newX + 100 < 0 || newY - 100 > canvas.getHeight() || newY + 100 < 0)
-//				{
-//					System.out.println("newX: " + newX + ", newY: " + newY);
-//					canvas.getChildren().remove(node);
-//				}
-
-					double newX, newY, newX1, newY1;
-
-					// Detect border collision
-					do
-					{
-						newX = ((Message) node).getNewX();
-						newY = ((Message) node).getNewY();
-						newX1 = newX + ((Message) node).getWidth();
-						newY1 = newY + ((Message) node).getHeight();
-
-						if (newX < 0 || newY < 0 || newX > canvas.getWidth() || newY > canvas.getHeight() || newX1 < 0 || newY1 < 0 || newX1 > canvas.getWidth() || newY1 > canvas.getHeight())
-						{
-							((Message) node).setDirection(getRandomInteger(0, 360));
-						}
-
-					}
-					while (newX < 0 || newY < 0 || newX > canvas.getWidth() || newY > canvas.getHeight() || newX1 < 0 || newY1 < 0 || newX1 > canvas.getWidth() || newY1 > canvas.getHeight());
-
-//				else
-//				{
-					// Detect collision between messages
-//					for (Node node2 : canvas.getChildren())
-//					{
-//						if (!(node2 instanceof Message))
-//							break;
-//
-//						if (node2.getTranslateX() == newX && node2.getTranslateY() == newY)
-//						{
-//							((Message) node).reverseDirection();
-//						}
-//					}
-//				}
-
-					node.setTranslateX(((Message) node).getNewX());
-					node.setTranslateY(((Message) node).getNewY());
+					((Message) node).setDirection(getRandomInteger(0, 360));
 				}
 
-				frameStats.addFrame(elapsedTime);
+				node.setTranslateX(((Message) node).getNewX());
+				node.setTranslateY(((Message) node).getNewY());
 			}
-			lastUpdateTime.set(now);
+
+			benchmark.addFrame();
+			stats.setText(benchmark.getText() + ", Number of messages: " + canvas.getChildren().size());
 		}
 	}
 
 	private void displayAddMessageWindow()
 	{
-		String message = newMessageBox.display();
+		String message = NewMessageBox.display();
 		addMessage(
 				message,
 				getRandomInteger(10, 30),
@@ -160,11 +113,6 @@ public class Main extends FXApplet
 		label.setTextFill(color);
 
 		label.setTranslateZ(labels.size() + 1);
-		// sometimes outside of border
-		// so not exactly what I would want
-//		label.setTranslateX(getRandomInteger(0, (int) canvas.getWidth()));
-//		label.setTranslateY(getRandomInteger(0, (int) canvas.getHeight()));
-		// so the better solution would be to just use static position
 		label.setTranslateX(canvas.getWidth() / 2);
 		label.setTranslateY(canvas.getHeight() / 2);
 
@@ -186,52 +134,11 @@ public class Main extends FXApplet
 			addMessage("Random text", getRandomInteger(10, 30), Color.rgb(getRandomInteger(0, 255), getRandomInteger(0, 255), getRandomInteger(0, 255)));
 		}
 
-		System.out.println(canvas.getChildren().size());
-
 		timer.start();
 	}
 
 	private static int getRandomInteger(int min, int max)
 	{
 		return new Random().nextInt((max - min) + 1) + min;
-	}
-
-	private static class FrameStats {
-		private long   frameCount;
-		private double meanFrameInterval; // millis
-		private final ReadOnlyStringWrapper text = new ReadOnlyStringWrapper(this, "text", "Frame count: 0 Average frame interval: N/A");
-
-		public long getFrameCount()
-		{
-			return frameCount;
-		}
-
-		public double getMeanFrameInterval()
-		{
-			return meanFrameInterval;
-		}
-
-		public void addFrame(long frameDurationNanos)
-		{
-			meanFrameInterval = (meanFrameInterval * frameCount + frameDurationNanos / 1_000_000.0) / (frameCount + 1);
-			frameCount++;
-			text.set(toString());
-		}
-
-		public String getText()
-		{
-			return text.get();
-		}
-
-		public ReadOnlyStringProperty textProperty()
-		{
-			return text.getReadOnlyProperty();
-		}
-
-		@Override
-		public String toString()
-		{
-			return String.format("Frame count: %,d Average frame interval: %.3f milliseconds", getFrameCount(), getMeanFrameInterval());
-		}
 	}
 }
