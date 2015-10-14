@@ -31,7 +31,11 @@ public class newMessageBox
 		addButton.setOnAction(e ->
 		                      {
 			                      _message = message.getText();
-			                      stage.close();
+
+			                      if (_message.length() > 0)
+			                      {
+				                      stage.close();
+			                      }
 		                      });
 
 		VBox layout = new VBox(5);

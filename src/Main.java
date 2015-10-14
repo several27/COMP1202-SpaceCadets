@@ -94,7 +94,7 @@ public class Main extends FXApplet
 
 	private void displayAddMessageWindow()
 	{
-		String message = NewMessageBox.display();
+		String message = newMessageBox.display();
 		addMessage(
 				message,
 				getRandomInteger(10, 30),
